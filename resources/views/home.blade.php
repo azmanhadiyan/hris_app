@@ -27,17 +27,17 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* Tengah secara vertikal */
-            align-items: center; /* Tengah secara horizontal */
+            justify-content: center;
+            align-items: center;
             padding: 40px 20px;
         }
 
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 25px;
             width: 100%;
-            max-width: 900px; /* Batas lebar menu agar tidak terlalu lebar */
+            max-width: 1000px;
             justify-items: center;
         }
 
@@ -49,7 +49,8 @@
             box-shadow: 0 3px 15px rgba(0,0,0,0.1);
             transition: all 0.2s ease-in-out;
             cursor: pointer;
-            width: 180px;
+            width: 100%;
+            max-width: 180px;
         }
 
         .menu-card:hover {
@@ -73,6 +74,66 @@
             padding: 15px 0;
             color: #777;
             background-color: #f4f6f9;
+            font-size: 14px;
+        }
+
+        /* --- RESPONSIVE BREAKPOINTS --- */
+        @media (max-width: 768px) {
+            .content {
+                padding: 30px 15px;
+            }
+
+            .menu-grid {
+                gap: 20px;
+            }
+
+            .menu-card {
+                max-width: 160px;
+                padding: 20px 10px;
+            }
+
+            .menu-card img {
+                width: 50px;
+            }
+
+            .menu-title {
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .menu-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .menu-card {
+                max-width: 140px;
+                padding: 15px 8px;
+            }
+
+            .menu-card img {
+                width: 45px;
+            }
+
+            .menu-title {
+                font-size: 14px;
+            }
+
+            footer {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .menu-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .menu-card {
+                max-width: 200px;
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -101,9 +162,9 @@
 
     {{-- GRID MENU --}}
     <div class="menu-grid">
-
         {{-- Menu untuk semua user --}}
-        <div class="menu-card" onclick="window.location.href='#'">
+        <div class="menu-card" onclick="window.location.href='{{ url('karyawan') }}'">
+
             <img src="https://cdn-icons-png.flaticon.com/512/3135/3135768.png" alt="Karyawan">
             <div class="menu-title">Data Karyawan</div>
         </div>
@@ -138,13 +199,11 @@
                 <div class="menu-title">Manajemen Pengguna</div>
             </div>
 
-
             <div class="menu-card" onclick="window.location.href='#'">
                 <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png" alt="Database">
                 <div class="menu-title">Manajemen Database</div>
             </div>
         @endif
-
     </div>
 </div>
 

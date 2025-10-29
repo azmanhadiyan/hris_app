@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\ManajemenUser\UserController;
 
 /*
@@ -10,29 +11,34 @@ use App\Http\Controllers\ManajemenUser\UserController;
 | Web Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
+| Semua route utama aplikasi kamu terdaftar di sini.
+| Route yang butuh autentikasi dikelompokkan dalam middleware 'auth'.
 |
 */
 
-
-
-
+// 🔹 Default route → arahkan ke halaman login
 Route::get('/', function () {
-    return view('/auth/login');
+    return view('auth.login');
 });
+
+// 🔹 Register route (jika kamu pakai register manual)
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register.form');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
+
+// 🔹 Dashboard/Home
 Route::get('/home', [HomeController::class, 'index'])
-    ->middleware(['auth'])
+    ->middleware('auth')
     ->name('home');
 
-
+// 🔹 Route yang butuh login
 Route::middleware(['auth'])->group(function () {
+
+    // Manajemen User (admin)
     Route::resource('manajemen_users/users', UserController::class)
         ->names('manajemen_users.users');
+
+    // CRUD Data Karyawan
+    Route::resource('karyawan', KaryawanController::class);
 });
 
-
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

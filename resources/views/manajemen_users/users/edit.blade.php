@@ -2,7 +2,7 @@
 
 @section('content')
 <style>
-    /* Container utama */
+    /* ===== Container utama ===== */
     .edit-user-container {
         max-width: 700px;
         margin: 40px auto;
@@ -11,17 +11,19 @@
         box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         padding: 30px 40px;
         font-family: 'Poppins', sans-serif;
+        transition: all 0.3s ease;
     }
 
-    /* Judul */
+    /* ===== Judul ===== */
     .edit-user-container h2 {
         text-align: center;
         color: #333;
         margin-bottom: 25px;
         font-weight: 600;
+        font-size: 26px;
     }
 
-    /* Label dan input */
+    /* ===== Form control ===== */
     .form-group {
         margin-bottom: 20px;
     }
@@ -40,17 +42,17 @@
         padding: 10px 14px;
         width: 100%;
         font-size: 15px;
-        transition: border-color 0.3s ease;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
     .form-group input:focus,
     .form-group select:focus {
         border-color: #7EA039;
         outline: none;
-        box-shadow: 0 0 5px rgba(126,160,57,0.3);
+        box-shadow: 0 0 6px rgba(126,160,57,0.3);
     }
 
-    /* Tombol */
+    /* ===== Tombol ===== */
     .btn-save {
         background-color: #7EA039;
         color: #fff;
@@ -88,6 +90,55 @@
         font-size: 13px;
         color: #888;
         margin-top: 5px;
+    }
+
+    /* ===== Responsif ===== */
+    @media (max-width: 768px) {
+        .edit-user-container {
+            padding: 25px 20px;
+            margin: 30px 15px;
+        }
+
+        .edit-user-container h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+
+        .form-group input,
+        .form-group select {
+            font-size: 14px;
+            padding: 9px 12px;
+        }
+
+        .btn-save, .btn-back {
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .text-center {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .edit-user-container {
+            margin: 20px 10px;
+            padding: 20px 15px;
+        }
+
+        .edit-user-container h2 {
+            font-size: 20px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+        }
+
+        .note {
+            font-size: 12px;
+        }
     }
 </style>
 
