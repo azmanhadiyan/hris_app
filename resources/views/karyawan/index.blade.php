@@ -111,6 +111,44 @@
             padding: 4px 8px;
         }
     }
+    .pagination {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination .page-item .page-link {
+        border-radius: 8px;
+        padding: 8px 14px;
+        border: 1px solid #e0e0e0;
+        color: #7EA039;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #7EA039;
+        border-color: #7EA039;
+        color: white;
+    }
+
+    .pagination .page-item .page-link:hover {
+        background-color: #7EA039;
+        color: white;
+        border-color: #7EA039;
+        transform: translateY(-2px);
+    }
+
+    .pagination .page-item.disabled .page-link {
+        background-color: #f5f5f5;
+        color: #aaa;
+        border-color: #ddd;
+    }
+    .pagination .page-item .page-link {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
 </style>
 
 <div class="container py-4">
@@ -176,8 +214,8 @@
                 </tbody>
             </table>
 
-            <div class="mt-3">
-                {{ $karyawans->links() }}
+            <div class="mt-4">
+                {{ $karyawans->appends(request()->query())->links() }}
             </div>
         </div>
 
@@ -215,8 +253,8 @@
             <p class="text-center text-muted py-3">Tidak ada data ditemukan</p>
             @endforelse
 
-            <div class="mt-3">
-                {{ $karyawans->links() }}
+            <div class="mt-4">
+                {{ $karyawans->appends(request()->query())->links() }}
             </div>
         </div>
     </div>

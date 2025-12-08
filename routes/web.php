@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KaryawanController;
+use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\ManajemenUser\UserController;
 
 /*
@@ -39,6 +40,9 @@ Route::middleware(['auth'])->group(function () {
 
     // CRUD Data Karyawan
     Route::resource('karyawan', KaryawanController::class);
+    Route::resource('absensi', AbsensiController::class);
+    Route::get('/dashboard/absensi', [AbsensiController::class, 'dashboard'])->name('absensi.dashboard');
+
 });
 
 require __DIR__ . '/auth.php';

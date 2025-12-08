@@ -47,35 +47,79 @@ class KaryawanController extends Controller
             'nip' => 'required|unique:karyawans',
             'nama_lengkap' => 'required',
             'email' => 'required|email|unique:karyawans',
-            'departemen' => 'required',
+            'no_hp' => 'nullable',
+            'alamat' => 'nullable',
             'jabatan' => 'required',
+            'departemen' => 'required',
+            'tanggal_masuk' => 'required|date',
+            'jenis_kelamin' => 'required',
+            'tanggal_lahir' => 'nullable|date',
+            'tempat_lahir' => 'nullable',
+            'gaji' => 'nullable|numeric',
+            'foto' => 'nullable|image|max:2048',
         ]);
 
-        Karyawan::create($validated + [
-            'status_karyawan' => $request->status_karyawan ?? 'Kontrak',
-        ]);
+        // upload foto
+        if ($request->hasFile('foto')) {
+            $validated['foto'] = $request->file('foto')->store('karyawan', 'public');
+        }
 
-        return redirect()->route('karyawan.index')->with('success', 'Data karyawan berhasil ditambahkan!');
+        $validated['status_karyawan'] = $request->status_karyawan ?? 'Kontrak';
+
+        Karyawan::create($validated);
+
+        return redirect()
+            ->route('karyawan.index')
+            ->with('success', 'Data karyawan berhasil ditambahkan!');
     }
+
 
     public function edit(Karyawan $karyawan)
     {
         return view('karyawan.edit', compact('karyawan'));
     }
 
-    public function update(Request $request, Karyawan $karyawan)
+    public function update(Request $request, $id)
     {
+        $karyawan = Karyawan::findOrFail($id);
+
         $validated = $request->validate([
+            'nip' => 'required|unique:karyawans,nip,' . $id,
             'nama_lengkap' => 'required',
-            'email' => 'required|email|unique:karyawans,email,' . $karyawan->id,
-            'departemen' => 'required',
+            'email' => 'required|email|unique:karyawans,email,' . $id,
+            'no_hp' => 'nullable',
+            'alamat' => 'nullable',
             'jabatan' => 'required',
+            'departemen' => 'required',
+            'tanggal_masuk' => 'required|date',
+            'jenis_kelamin' => 'required',
+            'tanggal_lahir' => 'nullable|date',
+            'tempat_lahir' => 'nullable',
+            'gaji' => 'nullable|numeric',
+            'foto' => 'nullable|image|max:2048',
         ]);
+
+        // foto upload
+        if ($request->hasFile('foto')) {
+
+            // hapus foto lama
+            if ($karyawan->foto && file_exists(storage_path('app/public/' . $karyawan->foto))) {
+                unlink(storage_path('app/public/' . $karyawan->foto));
+            }
+
+            // upload baru
+            $validated['foto'] = $request->file('foto')->store('karyawan', 'public');
+        }
+
+        $validated['status_karyawan'] = $request->status_karyawan ?? $karyawan->status_karyawan;
 
         $karyawan->update($validated);
 
-        return redirect()->route('karyawan.index')->with('success', 'Data karyawan berhasil diperbarui!');
+        return redirect()
+            ->route('karyawan.index')
+            ->with('success', 'Data karyawan berhasil diperbarui!');
     }
+
 
     public function destroy(Karyawan $karyawan)
     {

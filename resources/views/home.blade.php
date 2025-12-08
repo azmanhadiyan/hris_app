@@ -169,7 +169,7 @@
             <div class="menu-title">Data Karyawan</div>
         </div>
 
-        <div class="menu-card" onclick="window.location.href='#'">
+        <div class="menu-card" onclick="window.location.href='{{ url('absensi') }}'">
             <img src="https://cdn-icons-png.flaticon.com/512/2645/2645897.png" alt="Absensi">
             <div class="menu-title">Absensi</div>
         </div>
