@@ -62,6 +62,14 @@
         .mobile-card .value {
             margin-bottom: 6px;
         }
+        .pagination {
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .pagination .page-item .page-link {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
     }
 
     /* Pagination aesthetic */

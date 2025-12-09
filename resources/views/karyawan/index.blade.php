@@ -110,6 +110,14 @@
             font-size: 12px;
             padding: 4px 8px;
         }
+        .pagination {
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .pagination .page-item .page-link {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
     }
     .pagination {
         display: flex;

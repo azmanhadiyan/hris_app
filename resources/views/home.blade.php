@@ -174,6 +174,11 @@
             <div class="menu-title">Absensi</div>
         </div>
 
+        <div class="menu-card" onclick="window.location.href='{{ url('dashboard/absensi') }}'">
+            <img src="https://cdn-icons-png.flaticon.com/512/2645/2645897.png" alt="Absensi">
+            <div class="menu-title">Dashboard Absensi</div>
+        </div>
+
         <div class="menu-card" onclick="window.location.href='#'">
             <img src="https://cdn-icons-png.flaticon.com/512/1584/1584892.png" alt="Cuti">
             <div class="menu-title">Pengajuan Cuti</div>

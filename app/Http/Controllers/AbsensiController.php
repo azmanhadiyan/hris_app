@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Absensi;
 use App\Models\Karyawan;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
 class AbsensiController extends Controller
 {
@@ -36,7 +37,7 @@ class AbsensiController extends Controller
 
     public function dashboard(Request $request)
     {
-        $today = now()->toDateString();
+        $today = Carbon::now()->toDateString();
 
         // --- Filter input ---
         $tanggalFrom = $request->tanggal_from;
@@ -75,101 +76,160 @@ class AbsensiController extends Controller
             $tableQuery->whereDate('tanggal', $today);
         }
 
-        $todayAbsensi = $tableQuery->orderBy('tanggal')->get();
+        $todayAbsensi = $tableQuery->orderBy('tanggal')
+        ->paginate(10)   // <-- pagination aktif
+        ->withQueryString();
 
 
         // ======================================================
-        //  GRAFIK PER HARI (1 bulan)
+        //  GRAFIK PER HARI
         // ======================================================
 
-        // Tentukan bulan & tahun yang dipakai
-        if ($bulan) {
-            $selectedMonth = $bulan;
-            $selectedYear  = now()->year;
-        } elseif ($tanggalFrom) {
-            $selectedMonth = Carbon::parse($tanggalFrom)->month;
-            $selectedYear  = Carbon::parse($tanggalFrom)->year;
-        } else {
-            $selectedMonth = now()->month;
-            $selectedYear  = now()->year;
-        }
-
-        // Nama bulan
+        // Tentukan bulan & tahun yang dipilih
         $monthNames = [
-            1=>'Januari', 2=>'Februari', 3=>'Maret', 4=>'April', 5=>'Mei', 6=>'Juni',
-            7=>'Juli', 8=>'Agustus', 9=>'September', 10=>'Oktober', 11=>'November', 12=>'Desember'
+            1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',
+            7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember'
         ];
+        $selectedMonth = request()->get('bulan', date('m')); // default bulan sekarang
+        $selectedYear  = request()->get('tahun', date('Y')); // default tahun sekarang
 
-        $bulan_ini = $monthNames[$selectedMonth] . " " . $selectedYear;
-
-        // Ambil data per hari
-        $dailyData = Absensi::selectRaw('DAY(tanggal) as hari, COUNT(*) as total')
-            ->whereMonth('tanggal', $selectedMonth)
-            ->whereYear('tanggal', $selectedYear)
-            ->where('status',"Hadir")
-            ->when($karyawan, fn($q) => $q->where('karyawan_id', $karyawan))
-            ->groupBy('hari')
-            ->orderBy('hari')
-            ->get();
-
-        $dailyChart = [];
-
-        // Jika tanggalFrom & tanggalTo ada → pakai range tanggal
         if ($tanggalFrom && $tanggalTo) {
+            $start = Carbon::parse($tanggalFrom);
+            $end   = Carbon::parse($tanggalTo);
 
-            $startDay = Carbon::parse($tanggalFrom)->day;
-            $endDay   = Carbon::parse($tanggalTo)->day;
-
-            for ($i = $startDay; $i <= $endDay; $i++) {
-                $dailyChart[$i] = 0;
+            // Jika bulan & tahun sama → tampilkan satu bulan
+            if ($start->format('m-Y') === $end->format('m-Y')) {
+                $bulan_ini = $monthNames[$start->month] . " " . $start->year;
+            } else {
+                // Jika beda bulan → tampilkan dua bulan
+                $bulan_ini =
+                    $monthNames[$start->month] . " " . $start->year .
+                    " - " .
+                    $monthNames[$end->month] . " " . $end->year;
             }
 
         } else {
-            // Jika tidak → pakai 1 bulan penuh
-            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $selectedMonth, $selectedYear);
-
-            for ($i = 1; $i <= $daysInMonth; $i++) {
-                $dailyChart[$i] = 0;
-            }
-        }
-
-
-        foreach ($dailyData as $row) {
-            if (isset($dailyChart[$row->hari])) {
-                $dailyChart[$row->hari] = $row->total;
-            }
+            // Default (original behavior)
+            $bulan_ini = $monthNames[$selectedMonth] . " " . $selectedYear;
         }
 
         // ======================================================
-        //  GRAFIK PER BULAN (12 bulan)
+        //  QUERY: TOTAL PER HARI PER STATUS (BERDASARKAN TANGGAL PENUH)
         // ======================================================
-        $chartQuery = Absensi::query()
+        $dailyData = Absensi::selectRaw('
+                DATE(tanggal) as tanggal_full,
+                SUM(CASE WHEN status = "Hadir" THEN 1 ELSE 0 END) as hadir,
+                SUM(CASE WHEN status = "Izin" THEN 1 ELSE 0 END) as izin,
+                SUM(CASE WHEN status = "Sakit" THEN 1 ELSE 0 END) as sakit,
+                SUM(CASE WHEN status = "Alpha" THEN 1 ELSE 0 END) as alpha,
+                SUM(CASE WHEN status = "Cuti" THEN 1 ELSE 0 END) as cuti
+            ')
             ->when($tanggalFrom, fn($q) => $q->whereDate('tanggal', '>=', $tanggalFrom))
             ->when($tanggalTo, fn($q) => $q->whereDate('tanggal', '<=', $tanggalTo))
-            ->when($karyawan, fn($q) => $q->where('karyawan_id', $karyawan));
-
-        $rawChart = $chartQuery
-            ->selectRaw('MONTH(tanggal) as bulan, COUNT(*) as total')
-            ->groupBy('bulan')
-            ->orderBy('bulan')
+            ->when(!$tanggalFrom && !$tanggalTo, fn($q) => $q->whereMonth('tanggal', $selectedMonth)->whereYear('tanggal', $selectedYear))
+            ->when($karyawan, fn($q) => $q->where('karyawan_id', $karyawan))
+            ->groupBy('tanggal_full')
+            ->orderBy('tanggal_full')
             ->get();
 
-        // Lengkapi 12 bulan
-        $chartData = collect([]);
-        for ($i = 1; $i <= 12; $i++) {
-            $found = $rawChart->firstWhere('bulan', $i);
-            $chartData->push([
-                'bulan' => $i,
-                'total' => $found ? $found->total : 0
-            ]);
+        // ======================================================
+        //  SIAPKAN ARRAY CHART PER HARI (KEY = 'YYYY-MM-DD')
+        //  - jika ada tanggal_from & tanggal_to gunakan CarbonPeriod
+        //  - jika tidak, gunakan seluruh bulan yg dipilih
+        // ======================================================
+        $dailyChart = [];
+
+        if ($tanggalFrom && $tanggalTo) {
+            // pastikan format tanggal valid
+            $period = CarbonPeriod::create($tanggalFrom, $tanggalTo);
+
+            foreach ($period as $date) {
+                $key = $date->format('Y-m-d');
+                $dailyChart[$key] = [
+                    'Hadir' => 0,
+                    'Izin'  => 0,
+                    'Sakit' => 0,
+                    'Alpha' => 0,
+                    'Cuti'  => 0,
+                ];
+            }
+        } else {
+            // seluruh hari dalam bulan yang dipilih
+            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $selectedMonth, $selectedYear);
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $date = Carbon::create($selectedYear, $selectedMonth, $d)->format('Y-m-d');
+                $dailyChart[$date] = [
+                    'Hadir' => 0,
+                    'Izin'  => 0,
+                    'Sakit' => 0,
+                    'Alpha' => 0,
+                    'Cuti'  => 0,
+                ];
+            }
+        }
+
+        // ======================================================
+        //  ISI DATA CHART DARI QUERY (cocokkan berdasarkan tanggal_full)
+        // ======================================================
+        foreach ($dailyData as $row) {
+            $key = Carbon::parse($row->tanggal_full)->format('Y-m-d');
+            if (isset($dailyChart[$key])) {
+                $dailyChart[$key] = [
+                    'Hadir' => (int) $row->hadir,
+                    'Izin'  => (int) $row->izin,
+                    'Sakit' => (int) $row->sakit,
+                    'Alpha' => (int) $row->alpha,
+                    'Cuti'  => (int) $row->cuti,
+                ];
+            } else {
+                // Jika tanggal hasil query berada di luar period (kemungkinan kecil), tambahkan juga
+                $dailyChart[$key] = [
+                    'Hadir' => (int) $row->hadir,
+                    'Izin'  => (int) $row->izin,
+                    'Sakit' => (int) $row->sakit,
+                    'Alpha' => (int) $row->alpha,
+                    'Cuti'  => (int) $row->cuti,
+                ];
+            }
+        }
+
+        // OPTIONAL: pastikan urutan chronologis (terutama bila keys ditambahkan di luar loop)
+        if (!empty($dailyChart)) {
+            ksort($dailyChart);
         }
 
 
-        // ======================================================
-        //  LIST KARYAWAN
-        // ======================================================
-        $karyawanList = Karyawan::all();
 
+
+        // ======================================================
+        //  GRAFIK PER BULAN (TOTAL SEMUA STATUS) — FIXED
+        // ======================================================
+        $statusList = ['Hadir', 'Izin', 'Sakit', 'Alpha', 'Cuti'];
+        $chartData = [];
+
+        foreach ($statusList as $status) {
+
+            $rows = Absensi::query()
+                ->when($tanggalFrom, fn($q) => $q->whereDate('tanggal', '>=', $tanggalFrom))
+                ->when($tanggalTo, fn($q) => $q->whereDate('tanggal', '<=', $tanggalTo))
+                ->when($karyawan, fn($q) => $q->where('karyawan_id', $karyawan))
+                ->where('status', $status)
+                ->selectRaw('MONTH(tanggal) as bulan, COUNT(*) as total')
+                ->groupBy('bulan')
+                ->orderBy('bulan')
+                ->get();
+
+            $arr = [];
+            for ($i = 1; $i <= 12; $i++) {
+                $found = $rows->firstWhere('bulan', $i);
+                $arr[] = $found ? $found->total : 0;
+            }
+
+            $chartData[$status] = $arr;
+        }
+
+
+        $karyawanList = Karyawan::all();
 
         return view('absensi.dashboard', compact(
             'summary',
@@ -180,8 +240,6 @@ class AbsensiController extends Controller
             'karyawanList'
         ));
     }
-
-
 
     public function create()
     {
